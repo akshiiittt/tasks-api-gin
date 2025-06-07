@@ -1,0 +1,55 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build output
+*.out
+*.test
+
+# Go build artifacts
+*.a
+*.o
+
+# Go workspace file (Go 1.18+)
+go.work
+go.work.sum
+
+# Vendor directory (if you vendor dependencies)
+vendor/
+
+# Dependency directories (if using tools like Go modules)
+bin/
+pkg/
+coverage.out
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Gin specific (if you store temp certs or debug files)
+cert.pem
+key.pem
+debug.log
+
+# Test cache
+*.testcache
+
+# Environment and config
+.env
+.env.*
+config.yaml
+config.json
