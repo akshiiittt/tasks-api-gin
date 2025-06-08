@@ -8,9 +8,9 @@ import (
 
 func TaskRoutes(r *gin.Engine) {
 	tasks := r.Group("/tasks")
-	tasks.POST("/create", handlers.CreateTasks)
-	tasks.GET("/tasks", handlers.GetTasks)
-	tasks.GET("/task/:id", handlers.GetTask)
-	tasks.PUT("/task/:id", handlers.UpdateTask)
-	tasks.DELETE("/task/:id", handlers.DeleteTask)
+	tasks.POST("/", handlers.CreateTasks)
+	tasks.GET("/", handlers.GetTasks)
+	tasks.GET("/:id", handlers.GetTask)
+	tasks.PUT("/:id", handlers.UpdateTask)
+	tasks.DELETE("/:id", handlers.DeleteTask)
 }
