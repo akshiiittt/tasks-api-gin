@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"task-api/internal/database"
 	"task-api/internal/routes"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +11,8 @@ import (
 
 func main() {
 	fmt.Println("Hello")
+
+	database.Connect()
 
 	r := gin.Default()
 

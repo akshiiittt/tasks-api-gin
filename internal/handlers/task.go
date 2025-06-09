@@ -1,13 +1,16 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
+	"task-api/internal/database"
 	"task-api/internal/models"
 	"task-api/internal/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 func CreateTasks(c *gin.Context) {
@@ -17,81 +20,96 @@ func CreateTasks(c *gin.Context) {
 		return
 	}
 
-	// fmt.Println(task, "*******************")
-
-	task.ID = models.NextId
+	fmt.Println(task, "*******************")
+	task.ID = uuid.New()
 	task.CreatedAt = time.Now()
-	models.NextId++
-	models.Tasks = append(models.Tasks, task)
+	task.UpdatedAt = time.Now()
+
+	if err := database.DB.Create(&task).Error; err != nil {
+		utils.Error(c, http.StatusInternalServerError, "Task not created", nil)
+		return
+	}
 
 	utils.Success(c, http.StatusCreated, "Task created", task)
-	// c.JSON(http.StatusCreated, gin.H{"status": "success", "message": "task created", "data": task})
 
 }
 
 func GetTasks(c *gin.Context) {
-	utils.Success(c, http.StatusOK, "Tasks list", models.Tasks)
-}
-
-func GetTask(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		utils.Error(c, http.StatusBadRequest, "Invalid task id", nil)
+	var tasks []models.Task
+	if err := database.DB.Find(&tasks).Error; err != nil {
+		utils.Error(c, http.StatusInternalServerError, "Could not able to retrive tasks", nil)
 		return
 	}
 
-	for _, v := range models.Tasks {
-		if v.ID == id {
-			utils.Success(c, http.StatusOK, "Task found ", v)
-			return
-		}
-	}
-	utils.Error(c, http.StatusNotFound, "Task not found", nil)
+	utils.Success(c, http.StatusOK, "Tasks list", tasks)
 }
 
-func UpdateTask(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
+func GetTask(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
 	if err != nil {
-		utils.Error(c, http.StatusBadRequest, "Invalid task id", nil)
+		utils.Error(c, http.StatusBadRequest, "Invalid UUID", nil)
 		return
 	}
 
 	var task models.Task
+
+	if err := database.DB.First(&task, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.Error(c, http.StatusNotFound, "Task not found", nil)
+		} else {
+			utils.Error(c, http.StatusInternalServerError, "Error getting all tasks", nil)
+		}
+		return
+	}
+
+	utils.Success(c, http.StatusOK, "Tasks retrieved", task)
+}
+
+func UpdateTask(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		utils.Error(c, http.StatusBadRequest, "Invalid UUID", nil)
+		return
+	}
+	var task models.Task
+
+	if err := database.DB.First(&task, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			utils.Error(c, http.StatusNotFound, "Task not found", nil)
+		} else {
+			utils.Error(c, http.StatusInternalServerError, "Error getting task", nil)
+		}
+		return
+	}
+
 	if err := c.ShouldBindJSON(&task); err != nil {
 		utils.Error(c, http.StatusBadRequest, "Invalid payload", nil)
 		return
 	}
 
-	for k, v := range models.Tasks {
-		if v.ID == id {
-			models.Tasks[k].Title = task.Title
-			models.Tasks[k].Description = task.Description
-			models.Tasks[k].Status = task.Status
-			utils.Success(c, http.StatusOK, "Task updated ", models.Tasks[k])
-			return
-		}
-	}
+	task.UpdatedAt = time.Now()
 
-	utils.Error(c, http.StatusNotFound, "Task not found", nil)
-}
-
-func DeleteTask(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		utils.Error(c, http.StatusBadRequest, "Invalid task id", nil)
+	if err := database.DB.Save(&task).Error; err != nil {
+		utils.Error(c, http.StatusInternalServerError, "Error saving task", nil)
 		return
 	}
 
-	for k, v := range models.Tasks {
-		if v.ID == id {
-			models.Tasks = append(models.Tasks[:k], models.Tasks[k+1:]...)
-			utils.Success(c, http.StatusOK, "Task deleted ", v)
-			return
-		}
+	utils.Success(c, http.StatusOK, "Tasks retrived", task)
+}
+
+func DeleteTask(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		utils.Error(c, http.StatusBadRequest, "Invalid UUID", nil)
+		return
+	}
+	if err := database.DB.Delete(&models.Task{}, id).Error; err != nil {
+		utils.Error(c, http.StatusInternalServerError, "Error deleting task", nil)
+		return
 	}
 
-	utils.Error(c, http.StatusNotFound, "Task not found", nil)
+	utils.Success(c, http.StatusOK, "Task deleted ", nil)
 }
